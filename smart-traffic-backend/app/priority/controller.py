@@ -114,13 +114,16 @@ class SignalPriorityController:
         approach: str | None,
         reason: str,
         now: float,
+        held: float | None = None,
     ) -> PriorityDecision:
-        held = None if self._granted_at is None else max(0.0, now - self._granted_at)
+        if held is None and self._granted_at is not None:
+            held = max(0.0, now - self._granted_at)
         return PriorityDecision(
             action=action,
             approach=approach,
             reason=reason,
             state=self._state(),
+            at=now,
             held_for_s=held,
         )
 
@@ -197,7 +200,7 @@ class SignalPriorityController:
             approach = self._active
             self._release(now, "max_hold_exceeded")
             return self._decision(
-                PriorityAction.RELEASE, approach, "max_hold_exceeded", now
+                PriorityAction.RELEASE, approach, "max_hold_exceeded", now, held
             )
 
         last_seen = self._last_sighting_at or granted_at
@@ -205,7 +208,7 @@ class SignalPriorityController:
             approach = self._active
             self._release(now, "vehicle_cleared")
             return self._decision(
-                PriorityAction.RELEASE, approach, "vehicle_cleared", now
+                PriorityAction.RELEASE, approach, "vehicle_cleared", now, held
             )
 
         return self._decision(PriorityAction.HOLD, self._active, "holding", now)

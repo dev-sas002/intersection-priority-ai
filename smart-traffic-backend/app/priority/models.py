@@ -80,5 +80,7 @@ class PriorityDecision:
     approach: str | None
     reason: str
     state: PriorityState
-    #: Seconds the current grant has been held, when one is active.
+    #: Controller clock reading the decision was made at.
+    at: float
+    #: Seconds the grant has been held; on a RELEASE, how long it lasted.
     held_for_s: float | None = None

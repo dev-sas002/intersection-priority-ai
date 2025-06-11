@@ -157,6 +157,13 @@ class TestCooldown:
         controller.tick(now=9.0)
         assert dict(controller.state().cooldown_until)["north"] == pytest.approx(29.0)
 
+    def test_a_release_reports_how_long_the_grant_lasted(self, controller):
+        see(controller, "north", at=0.0)
+        see(controller, "north", at=1.0)
+        decision = controller.tick(now=9.0)
+        assert decision.action is PriorityAction.RELEASE
+        assert decision.held_for_s == pytest.approx(8.0)
+
     def test_lapsed_cooldowns_drop_out_of_the_state(self, controller):
         see(controller, "north", at=0.0)
         see(controller, "north", at=1.0)

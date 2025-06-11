@@ -59,8 +59,11 @@ def _decision_response(decision: PriorityDecision) -> PriorityDecisionResponse:
         state=PriorityStateResponse(
             priority_active=decision.state.priority_active,
             active_approach=decision.state.active_approach,
-            held_for_s=decision.held_for_s,
-            cooldowns=dict(decision.state.cooldown_until),
+            held_for_s=decision.held_for_s if decision.state.priority_active else None,
+            cooldown_remaining_s={
+                approach: round(until - decision.at, 3)
+                for approach, until in decision.state.cooldown_until
+            },
         ),
     )
 

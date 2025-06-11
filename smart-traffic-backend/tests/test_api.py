@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 import pytest
 
+from app.priority import Sighting
 from tests.conftest import make_frame
 
 
@@ -300,6 +301,17 @@ class TestPriorityEndpoints:
         controller.tick(now=time.monotonic() + 100.0)
 
         assert client.get("/priority/state").json()["priority_active"] is False
+
+    def test_cooldowns_are_reported_as_seconds_remaining(self, client, controller):
+        start = time.monotonic()
+        controller.observe(Sighting("north", start, True, 0.95))
+        controller.observe(Sighting("north", start + 1.0, True, 0.95))
+        controller.tick(now=start + 9.0)
+
+        body = client.get("/priority/state").json()
+
+        # Released at start + 9 s with a 20 s cooldown, read a moment later.
+        assert body["cooldown_remaining_s"]["north"] == pytest.approx(29.0, abs=1.0)
 
     def test_callers_cannot_supply_their_own_timestamp(self, client, controller):
         """A far-future ``at`` once made the hold negative, so no timeout fired."""

@@ -42,14 +42,20 @@ class PriorityStateResponse(BaseModel):
     priority_active: bool
     active_approach: str | None = None
     held_for_s: float | None = None
-    cooldowns: dict[str, float] = Field(default_factory=dict)
+    cooldown_remaining_s: dict[str, float] = Field(
+        default_factory=dict,
+        description="Approaches that cannot be granted again yet, with seconds left.",
+    )
 
 
 class PriorityDecisionResponse(BaseModel):
     action: PriorityAction
     approach: str | None = None
     reason: str
-    held_for_s: float | None = None
+    held_for_s: float | None = Field(
+        default=None,
+        description="Seconds the grant has been held; on a release, how long it lasted.",
+    )
     state: PriorityStateResponse
 
 
