@@ -158,11 +158,25 @@ class TestCooldown:
         assert dict(controller.state().cooldown_until)["north"] == pytest.approx(29.0)
 
 
+    def test_lapsed_cooldowns_drop_out_of_the_state(self, controller):
+        see(controller, "north", at=0.0)
+        see(controller, "north", at=1.0)
+        controller.tick(now=9.0)
+        controller.tick(now=30.0)
+        assert controller.state().cooldown_until == ()
+
+
 class TestLifecycle:
     def test_tick_on_an_idle_controller_is_a_no_op(self, controller):
         decision = controller.tick(now=100.0)
         assert decision.action is PriorityAction.NO_CHANGE
         assert decision.reason == "idle"
+
+    def test_stale_evidence_for_unknown_approaches_is_forgotten(self, controller):
+        for index in range(50):
+            see(controller, f"approach-{index}", at=0.0)
+        controller.tick(now=11.0)
+        assert controller._evidence == {}
 
     def test_reset_clears_everything(self, controller):
         see(controller, "north", at=0.0)

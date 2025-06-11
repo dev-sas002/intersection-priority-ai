@@ -91,7 +91,7 @@ class SignalPriorityController:
             return self._tick(self._clock() if now is None else now)
 
     def reset(self) -> None:
-        """Drop all state. Used by tests and by the ops reset endpoint."""
+        """Drop all state."""
         with self._lock:
             self._evidence.clear()
             self._cooldowns.clear()
@@ -185,8 +185,8 @@ class SignalPriorityController:
         return self._grant(sighting.approach, now, reason)
 
     def _tick(self, now: float) -> PriorityDecision:
+        self._expire(now)
         if self._active is None:
-            self._prune_all(now)
             return self._decision(PriorityAction.NO_CHANGE, None, "idle", now)
 
         policy = self.policy
@@ -221,9 +221,20 @@ class SignalPriorityController:
         while window and window[0].at < cutoff:
             window.popleft()
 
-    def _prune_all(self, now: float) -> None:
-        for window in self._evidence.values():
+    def _expire(self, now: float) -> None:
+        """Forget stale evidence and lapsed cooldowns.
+
+        Approach names arrive from unauthenticated callers, so per-approach
+        entries are dropped once empty instead of accumulating for the life of
+        the process.
+        """
+        for approach, window in list(self._evidence.items()):
             self._prune(window, now)
+            if not window:
+                del self._evidence[approach]
+        self._cooldowns = {
+            approach: until for approach, until in self._cooldowns.items() if until > now
+        }
 
     def _grant(self, approach: str, now: float, reason: str) -> PriorityDecision:
         self._active = approach
