@@ -94,8 +94,10 @@ tmp/
 *.wmv
 *.flv
 *.webm
-# test_files/ holds two ~25 MB source clips that stay local only.
+# test_files/ holds two ~25 MB source clips that stay local only; samples/
+# carries 3-second, 960 px cuts of them that are small enough to commit.
 test_files/
+!samples/*.mp4
 
 # Model weights: never committed. The purpose-trained best.pt is supplied at
 # deploy time and the public fallback checkpoint is downloaded on first use.

@@ -64,7 +64,7 @@ COPY --from=builder /install /usr/local
 WORKDIR /app
 COPY smart-traffic-backend/app ./app
 # Sample clips ship with the image so a fresh container has something to scan.
-COPY test_files ./samples
+COPY samples ./samples
 COPY --from=weights /weights/ ./weights/
 
 RUN chown -R itcs:itcs /app && mkdir -p /tmp/ultralytics && chown itcs:itcs /tmp/ultralytics

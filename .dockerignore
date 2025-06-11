@@ -11,6 +11,11 @@ venv
 env
 docs
 logs
+test_files
+scripts
+.python-version
+.env
+.env.*
 *.md
 !README.md
 **/weights/*.pt

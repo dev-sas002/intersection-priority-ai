@@ -8,7 +8,7 @@
 set -euo pipefail
 
 BASE="${BASE:-http://localhost:8250}"
-CLIP="${CLIP:-test_files/ambulance_video1.mp4}"
+CLIP="${CLIP:-samples/ambulance.mp4}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
