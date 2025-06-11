@@ -2,11 +2,11 @@
 name = "itcs-backend"
 version = "1.0.0"
 description = "Emergency-vehicle detection and signal-priority decision service."
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 [tool.ruff]
 line-length = 90
-target-version = "py310"
+target-version = "py312"
 src = ["."]
 exclude = ["../project_venv", ".venv", "venv"]
 

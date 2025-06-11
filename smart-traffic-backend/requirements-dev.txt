@@ -1,5 +1,5 @@
 # Everything needed to run the test suite and the linter.
 -r requirements.txt
-pytest==8.3.4
-httpx==0.28.1
-ruff==0.8.6
+pytest==9.2.0
+httpx2==2.16.0
+ruff==0.17.4

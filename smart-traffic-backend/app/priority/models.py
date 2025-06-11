@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 __all__ = [
     "PriorityAction",
@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 
-class PriorityAction(str, Enum):
+class PriorityAction(StrEnum):
     """What the controller is asking the signal owner to do."""
 
     NO_CHANGE = "no_change"

@@ -5,5 +5,5 @@
 # ultralytics depends on the non-headless opencv-python. Pinning it to the same
 # version as opencv-python-headless keeps a single, consistent cv2 on disk
 # instead of letting pip install two majors over each other.
-opencv-python==4.10.0.84
-ultralytics==8.3.200
+opencv-python==4.14.0.94
+ultralytics==8.4.204
