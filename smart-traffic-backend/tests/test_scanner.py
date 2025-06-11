@@ -117,6 +117,14 @@ def test_frame_budget_is_respected(monkeypatch):
     assert capture.reads == 4
 
 
+def test_frames_read_counts_decoded_frames_only(monkeypatch):
+    """The end-of-stream read returns no frame and must not be counted."""
+    scanner, capture, _ = build([make_frame()] * 3, [[]], monkeypatch)
+    result = scanner.scan("clip.mp4")
+    assert capture.reads == 4
+    assert result.frames_read == 3
+
+
 def test_capture_is_always_released(monkeypatch):
     scanner, capture, _ = build([make_frame()] * 2, [[]], monkeypatch)
     scanner.scan("clip.mp4")

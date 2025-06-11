@@ -127,9 +127,9 @@ class _FrameReader:
         index = 0
         while yielded < self._max_frames:
             ret, frame = self._capture.read()
-            self.reads += 1
             if not ret:
                 return
+            self.reads += 1
             if index % self._stride == 0:
                 yielded += 1
                 yield frame

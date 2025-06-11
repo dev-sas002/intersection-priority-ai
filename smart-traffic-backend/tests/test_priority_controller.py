@@ -157,7 +157,6 @@ class TestCooldown:
         controller.tick(now=9.0)
         assert dict(controller.state().cooldown_until)["north"] == pytest.approx(29.0)
 
-
     def test_lapsed_cooldowns_drop_out_of_the_state(self, controller):
         see(controller, "north", at=0.0)
         see(controller, "north", at=1.0)

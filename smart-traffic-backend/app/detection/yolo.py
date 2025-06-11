@@ -55,7 +55,7 @@ def resolve_label(
         return mapping[cls_id]
     if isinstance(model_names, Mapping) and cls_id in model_names:
         return str(model_names[cls_id])
-    if isinstance(model_names, (list, tuple)) and 0 <= cls_id < len(model_names):
+    if isinstance(model_names, list | tuple) and 0 <= cls_id < len(model_names):
         return str(model_names[cls_id])
     return str(cls_id)
 
