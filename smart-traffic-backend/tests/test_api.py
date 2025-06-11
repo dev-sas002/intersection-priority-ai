@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import time
 
 import cv2
 import numpy as np
@@ -265,11 +266,11 @@ class TestPriorityEndpoints:
     def test_sightings_grant_priority(self, client):
         client.post(
             "/priority/sightings",
-            json={"approach": "north", "confidence": 0.95, "at": 0.0},
+            json={"approach": "north", "confidence": 0.95},
         )
         response = client.post(
             "/priority/sightings",
-            json={"approach": "north", "confidence": 0.95, "at": 1.0},
+            json={"approach": "north", "confidence": 0.95},
         )
         assert response.status_code == 200
         body = response.json()
@@ -288,17 +289,27 @@ class TestPriorityEndpoints:
     def test_tick_advances_the_clock(self, client, controller):
         client.post(
             "/priority/sightings",
-            json={"approach": "north", "confidence": 0.95, "at": 0.0},
+            json={"approach": "north", "confidence": 0.95},
         )
         client.post(
             "/priority/sightings",
-            json={"approach": "north", "confidence": 0.95, "at": 1.0},
+            json={"approach": "north", "confidence": 0.95},
         )
         assert controller.state().priority_active is True
 
-        controller.tick(now=100.0)
+        controller.tick(now=time.monotonic() + 100.0)
 
         assert client.get("/priority/state").json()["priority_active"] is False
+
+    def test_callers_cannot_supply_their_own_timestamp(self, client, controller):
+        """A far-future ``at`` once made the hold negative, so no timeout fired."""
+        for _ in range(2):
+            response = client.post(
+                "/priority/sightings",
+                json={"approach": "north", "confidence": 0.95, "at": 1e12},
+            )
+            assert response.status_code == 422
+        assert controller.state().priority_active is False
 
 
 def _with(settings, **overrides):

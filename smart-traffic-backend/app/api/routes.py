@@ -164,7 +164,7 @@ async def record_sighting(
     decision = controller.observe(
         Sighting(
             approach=sighting.approach,
-            at=time.monotonic() if sighting.at is None else sighting.at,
+            at=time.monotonic(),
             detected=sighting.detected,
             confidence=sighting.confidence,
         )

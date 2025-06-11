@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.priority.models import PriorityAction
 
@@ -74,14 +74,12 @@ class PredictionResponse(BaseModel):
 
 
 class SightingRequest(BaseModel):
+    # Unknown fields are refused rather than ignored. The request used to take
+    # a caller-supplied ``at`` timestamp; one far in the future made every
+    # timeout rule compute a negative hold, so a single request could keep an
+    # approach granted indefinitely. Sightings are stamped by the server only.
+    model_config = ConfigDict(extra="forbid")
+
     approach: str = Field(min_length=1, max_length=64, description="Approach identifier.")
     detected: bool = True
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
-    at: float | None = Field(
-        default=None,
-        description=(
-            "Seconds on the server's monotonic clock. Leave it unset in normal "
-            "use; supplying your own values is for replaying a scenario, and "
-            "must then be done consistently for every sighting."
-        ),
-    )
