@@ -30,7 +30,7 @@ curl -fsS -F "file=@${CLIP}" -F "approach=north" "$BASE/predict" \
   | python3 -c 'import json,sys; d=json.load(sys.stdin); d["frame"]=("<%d base64 chars>" % len(d["frame"])) if d.get("frame") else None; print(json.dumps(d, indent=2))'
 
 echo
-echo "==> Two corroborating sightings on the same approach grant a phase"
+echo "==> /predict counted as sighting 1 of 2; the next grants, the one after holds"
 for _ in 1 2; do
   curl -fsS -H 'Content-Type: application/json' \
     -d '{"approach":"north","detected":true,"confidence":0.95}' \
