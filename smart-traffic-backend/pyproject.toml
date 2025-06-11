@@ -1,0 +1,45 @@
+[project]
+name = "itcs-backend"
+version = "1.0.0"
+description = "Emergency-vehicle detection and signal-priority decision service."
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 90
+target-version = "py310"
+src = ["."]
+exclude = ["../project_venv", ".venv", "venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "W",    # warnings
+    "I",    # import ordering
+    "UP",   # pyupgrade
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "SIM",  # simplification
+    "RUF",  # ruff-specific
+    "N",    # naming
+    "T20",  # no stray print()
+    "ARG",  # unused arguments
+]
+ignore = [
+    "B008",  # FastAPI's Depends()/File() defaults are the documented idiom.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests deliberately poke at internals and take unused fixtures for effect.
+"tests/*" = ["ARG001", "ARG002", "ARG005", "N802"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]

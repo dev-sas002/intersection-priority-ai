@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: itcs-api:latest
+    # Host ports 8250-8259 are reserved for this project.
+    ports:
+      - "8250:8000"
+    environment:
+      # Production defaults: the fake detector is refused outright here, and
+      # `auto` falls back to the public COCO checkpoint baked into the image.
+      ITCS_ENV: production
+      ITCS_DETECTOR: auto
+      ITCS_LOG_LEVEL: INFO
+      ITCS_ALLOWED_ORIGINS: "http://localhost:8250"
+      ITCS_MAX_CONCURRENT_INFERENCES: "2"
+      ITCS_MAX_FRAMES: "60"
+      ITCS_FRAME_STRIDE: "3"
+      ITCS_BATCH_SIZE: "8"
+    volumes:
+      # Persists a checkpoint downloaded at run time, and is where you mount
+      # your own trained best.pt:
+      #   -v /path/to/best.pt:/app/weights/best.pt:ro
+      - model-cache:/app/weights
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    restart: unless-stopped
+
+volumes:
+  model-cache:
