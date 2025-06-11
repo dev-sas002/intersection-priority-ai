@@ -100,6 +100,40 @@ def test_oversized_uploads_leave_no_temp_file(tmp_path, monkeypatch):
     assert list(tmp_path.iterdir()) == []
 
 
+class DisconnectingUpload(FakeUpload):
+    """Fails part-way through, the way a dropped client connection does."""
+
+    async def read(self, size: int = -1) -> bytes:
+        if self._offset:
+            raise ConnectionResetError("client went away")
+        return await super().read(size)
+
+
+def test_a_failed_upload_leaves_no_temp_file(tmp_path, monkeypatch):
+    service = build_service()
+    monkeypatch.setattr("tempfile.tempdir", str(tmp_path))
+
+    with pytest.raises(ConnectionResetError):
+        asyncio.run(service.predict(DisconnectingUpload(b"z" * 4096), "clip.mp4"))
+
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_a_failed_scan_leaves_no_temp_file(tmp_path, monkeypatch):
+    service = build_service()
+    monkeypatch.setattr("tempfile.tempdir", str(tmp_path))
+
+    def broken_scan(path):
+        raise RuntimeError("decoder crashed")
+
+    service.scanner.scan = broken_scan
+
+    with pytest.raises(RuntimeError):
+        asyncio.run(service.predict(FakeUpload(b"z" * 64), "clip.mp4"))
+
+    assert list(tmp_path.iterdir()) == []
+
+
 def test_concurrent_scans_are_bounded():
     """Two slots, three simultaneous uploads: at most two run at once."""
     service = build_service(

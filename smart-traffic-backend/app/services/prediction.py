@@ -20,7 +20,7 @@ import os
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Any, BinaryIO
+from typing import Any
 
 import anyio.to_thread
 
@@ -100,39 +100,33 @@ class PredictionService:
                 "taken. Retry shortly."
             )
 
+        # The temp file is created here, outside the spooling step, so the
+        # ``finally`` removes it whatever goes wrong -- an oversized upload, a
+        # client that disconnects mid-stream, or a failing scan.
+        fd, tmp_path = tempfile.mkstemp(suffix=temp_suffix_for(filename))
         self._in_flight += 1
-        tmp_path: str | None = None
         try:
-            tmp_path = await self._spool(upload, temp_suffix_for(filename))
+            await self._spool(upload, fd)
             async with self._semaphore:
                 result = await anyio.to_thread.run_sync(self._scanner.scan, tmp_path)
             return PredictionOutcome(result=result, notice=self.notice)
         finally:
             self._in_flight -= 1
-            if tmp_path and os.path.exists(tmp_path):
-                os.remove(tmp_path)
+            os.remove(tmp_path)
 
-    async def _spool(self, upload: Any, suffix: str) -> str:
-        """Stream the upload to a temp file, refusing anything oversized."""
+    async def _spool(self, upload: Any, fd: int) -> None:
+        """Stream the upload into ``fd``, refusing anything oversized."""
         limit = self._settings.max_upload_bytes
         written = 0
-        handle: BinaryIO
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as handle:
-            tmp_path = handle.name
-            while True:
-                chunk = await upload.read(_CHUNK_BYTES)
-                if not chunk:
-                    break
+        with os.fdopen(fd, "wb") as handle:
+            while chunk := await upload.read(_CHUNK_BYTES):
                 written += len(chunk)
                 if written > limit:
-                    handle.close()
-                    os.remove(tmp_path)
                     raise UploadTooLargeError(
                         f"Upload exceeds the {limit} byte limit (ITCS_MAX_UPLOAD_BYTES)."
                     )
                 handle.write(chunk)
-        logger.debug("Spooled %d bytes to %s", written, tmp_path)
-        return tmp_path
+        logger.debug("Spooled %d bytes", written)
 
 
 def temp_suffix_for(filename: str) -> str:
