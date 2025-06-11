@@ -1,81 +1,74 @@
-# `/predict` — captured session
+# `/predict`: captured session
 
-Real request/response pairs, captured on 2026-09-23 against the service running
-on `http://localhost:8250` with the settings `docker-compose.yml` ships
-(`ITCS_MAX_FRAMES=60`, `ITCS_FRAME_STRIDE=3`, `ITCS_BATCH_SIZE=8`,
-`ITCS_MAX_CONCURRENT_INFERENCES=2`).
+Real requests against the Docker Compose stack (`docker compose up --build`,
+host port 8250), captured on 2026-11-07. The image was built from a clean
+copy of the repository, so no ambulance weights were present and
+`ITCS_DETECTOR=auto` chose the public COCO checkpoint baked in at build time.
+That is why each response carries a `notice` and the label is `"bus"`.
 
-No ambulance weights were present, so `ITCS_DETECTOR=auto` selected the public
-COCO fallback — which is why every response carries a `notice` and reports
-`label: "bus"` rather than `"ambulance"`. That is the honest answer for that
-model, not a bug.
-
-The `frame` field is a base64 JPEG. It has been replaced with its length here;
-nothing else has been edited.
+Compose sets `ITCS_MAX_FRAMES=60`, `ITCS_FRAME_STRIDE=3` and
+`ITCS_BATCH_SIZE=8`. The `frame` field (a base64 JPEG) is replaced by its
+length; nothing else is edited.
 
 ## Health
 
 ```console
-$ curl -s http://localhost:8250/health | jq
+$ curl -s localhost:8250/health
 {
-    "status": "ok",
-    "version": "1.0.0",
-    "environment": "production",
-    "detector": {
-        "name": "coco",
-        "performs_real_detection": true,
-        "identifies_ambulances": false,
-        "description": "Public Ultralytics yolov8n.pt (COCO). COCO has no ambulance class; truck, bus are treated as candidate emergency vehicles."
-    },
-    "inference_slots_free": 8
+  "status": "ok",
+  "version": "1.0.0",
+  "environment": "production",
+  "detector": {
+    "name": "coco",
+    "performs_real_detection": true,
+    "identifies_ambulances": false,
+    "description": "Public Ultralytics yolov8n.pt (COCO). COCO has no ambulance class; truck, bus are treated as candidate emergency vehicles."
+  },
+  "inference_slots_free": 8
 }
 ```
 
-## A clip that contains an emergency vehicle
+## A clip with an emergency vehicle
+
+`samples/ambulance.mp4` is three seconds of an ambulance driving ahead of the
+camera. The first batch of eight sampled frames (22 decoded frames at stride
+3) already holds a `bus` above the 0.75 confidence threshold, so the scan stops
+there.
 
 ```console
-$ curl -s -F "file=@test_files/ambulance_video1.mp4" -F "approach=north" \
-    http://localhost:8250/predict | jq
+$ curl -s -F "file=@samples/ambulance.mp4" localhost:8250/predict
 {
   "ambulance": true,
-  "frame": "<base64 JPEG, 157168 chars>",
-  "confidence": 0.7709326148033142,
+  "frame": "<74652 base64 chars>",
+  "confidence": 0.8124947547912598,
   "label": "bus",
-  "frames_read": 70,
-  "frames_inferred": 22,
+  "frames_read": 22,
+  "frames_inferred": 8,
   "detector": "coco",
   "notice": "The active model has no ambulance class: it reports generic vehicle classes and cannot confirm that the vehicle is an ambulance. Load the purpose-trained weights (ITCS_WEIGHTS_PATH) for a real answer.",
-  "priority": {
-    "action": "no_change",
-    "approach": "north",
-    "reason": "below_confidence_floor",
-    "held_for_s": null,
-    "state": {
-      "priority_active": false,
-      "active_approach": null,
-      "held_for_s": null,
-      "cooldowns": {}
-    }
-  }
+  "priority": null
 }
 ```
 
-`priority.reason` is `below_confidence_floor`: the scan's 0.771 is under the
-controller's `ITCS_PRIORITY_MIN_CONFIDENCE` of 0.80, so the sighting is not
-treated as evidence. The detection and the priority decision are deliberately
-held to separate bars.
+The response body was 75,010 bytes and took 1.4 s inside the Docker Desktop
+VM on an Apple Silicon Mac, model already loaded.
 
-## A clip that does not
+## A clip without one
+
+`samples/highway-suv.mp4` shows an SUV and a pickup on a highway. All 72
+frames are read, every third goes through the model, and nothing qualifies.
+The returned frame is the first sampled frame with a "No Ambulance Detected"
+overlay.
 
 ```console
-$ curl -s -F "file=@test_files/car_sample2_yolo.mp4" http://localhost:8250/predict | jq
+$ curl -s -F "file=@samples/highway-suv.mp4" localhost:8250/predict
 {
   "ambulance": false,
-  "frame": "<base64 JPEG, 96004 chars>",
+  "frame": "<54104 base64 chars>",
   "confidence": 0.0,
   "label": null,
-  "frames_read": 178,
-  "frames_inferred": 60,
+  "frames_read": 72,
+  "frames_inferred": 24,
   "detector": "coco",
   "notice": "The active model has no ambulance class: it reports generic vehicle classes and cannot confirm that the vehicle is an ambulance. Load the purpose-trained weights (ITCS_WEIGHTS_PATH) for a real answer.",
   "priority": null
@@ -85,57 +78,30 @@ $ curl -s -F "file=@test_files/car_sample2_yolo.mp4" http://localhost:8250/predi
 ## Something that is not a video
 
 ```console
-$ curl -s -w "\nHTTP %{http_code}\n" -F "file=@README.md" http://localhost:8250/predict
+$ curl -s -w "\nHTTP %{http_code}\n" -F "file=@LICENSE" localhost:8250/predict
 {"detail":"Uploaded file could not be read as a video."}
 HTTP 400
 ```
 
-## Six simultaneous uploads
+## Misconfiguration stops the process at startup
 
-`ITCS_MAX_CONCURRENT_INFERENCES=2`, so the six requests complete in three
-pairs rather than fighting over the CPU. None is dropped: the queue only
-returns 503 past `ITCS_INFERENCE_QUEUE_SLOTS` (8).
-
-```console
-$ for i in $(seq 1 6); do
->   curl -s -o /dev/null -w "%{http_code}  %{time_total}s\n" \
->     -F "file=@test_files/ambulance_video1.mp4" http://localhost:8250/predict &
-> done; wait
-200  1.837622s
-200  2.023958s
-200  3.577318s
-200  3.783004s
-200  5.429247s
-200  5.599744s
-```
-
-## What the response-size cap is worth
-
-The same request, same clip, same JPEG quality — only `ITCS_MAX_FRAME_EDGE`
-differs. The source frame is 4096x2160.
+`ITCS_DETECTOR=yolo` with no `best.pt` on disk (exit code 3, traceback
+trimmed):
 
 ```console
-ITCS_MAX_FRAME_EDGE=1280 (default)  response bytes: 157527
-ITCS_MAX_FRAME_EDGE=0    (uncapped)  response bytes: 928463
-```
-
-Before the cap existed the response was **1,757,211 bytes** (no resize, OpenCV's
-default JPEG quality of 95). The shipped defaults — a 1280 px longest edge at
-quality 85 — bring the same response to 157,527 bytes, **11x smaller**.
-
-## When the weights are missing or the fake detector is asked for
-
-```console
-### ITCS_DETECTOR=yolo with no weights on disk
-DetectorUnavailableError:
-Ambulance weights not found at /srv/itcs/weights/best.pt.
+$ docker run --rm -e ITCS_DETECTOR=yolo p2-intelligent-traffic-control-system:api
+app.errors.DetectorUnavailableError: Ambulance weights not found at /app/weights/best.pt.
 These weights are trained per-deployment and are deliberately NOT committed to this repository.
 Options:
-  1. Train or obtain a single-class YOLOv8 ambulance checkpoint and place it at /srv/itcs/weights/best.pt (or point ITCS_WEIGHTS_PATH at it).
+  1. Train or obtain a single-class YOLOv8 ambulance checkpoint and place it at /app/weights/best.pt (or point ITCS_WEIGHTS_PATH at it).
   2. Run with ITCS_DETECTOR=coco to use the auto-downloaded public YOLOv8n checkpoint. It detects generic COCO vehicle classes only and cannot identify an ambulance.
   3. Leave ITCS_DETECTOR=auto, which picks option 2 for you.
+ERROR:    Application startup failed. Exiting.
+```
 
-### ITCS_DETECTOR=stub with the default ITCS_ENV=production
-ConfigurationError:
-ITCS_DETECTOR=stub performs NO detection and is refused while ITCS_ENV='production'. Set ITCS_ENV=development (or 'test') as a second, deliberate opt-in if you really want the fake detector.
+`ITCS_DETECTOR=stub` under the default `ITCS_ENV=production` (exit code 1):
+
+```console
+$ docker run --rm -e ITCS_DETECTOR=stub p2-intelligent-traffic-control-system:api
+app.errors.ConfigurationError: ITCS_DETECTOR=stub performs NO detection and is refused while ITCS_ENV='production'. Set ITCS_ENV=development (or 'test') as a second, deliberate opt-in if you really want the fake detector.
 ```
