@@ -65,7 +65,9 @@ class PredictionResponse(BaseModel):
         default=None, description="Label of the highest-confidence detection."
     )
     frames_read: int = 0
-    frames_inferred: int = 0
+    frames_inferred: int = Field(
+        default=0, description="Frames passed through the detector, whole batches."
+    )
     detector: str
     #: Present whenever the result must not be read as a trustworthy ambulance
     #: detection -- a fake detector, or a model without an ambulance class.

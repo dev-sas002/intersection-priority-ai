@@ -125,6 +125,20 @@ def test_frames_read_counts_decoded_frames_only(monkeypatch):
     assert result.frames_read == 3
 
 
+def test_frames_inferred_counts_the_whole_batch(monkeypatch):
+    """An early exit on the first frame still paid for the full forward pass."""
+    scanner, _, detector = build(
+        [make_frame()] * 8,
+        [[("ambulance", 0.99)]],
+        monkeypatch,
+        ITCS_BATCH_SIZE="4",
+    )
+    result = scanner.scan("clip.mp4")
+    assert result.ambulance is True
+    assert detector.batches == [4]
+    assert result.frames_inferred == 4
+
+
 def test_capture_is_always_released(monkeypatch):
     scanner, capture, _ = build([make_frame()] * 2, [[]], monkeypatch)
     scanner.scan("clip.mp4")

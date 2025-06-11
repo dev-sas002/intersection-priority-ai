@@ -65,8 +65,10 @@ class VideoScanner:
 
         for batch in _batched(iter(reader), settings.batch_size):
             outputs = self.detector.detect(batch)
+            # The whole batch went through the model, even when the loop below
+            # stops at its first frame.
+            frames_inferred += len(batch)
             for frame, output in zip(batch, outputs, strict=False):
-                frames_inferred += 1
                 if fallback_frame is None:
                     fallback_frame = annotate_frame(
                         frame, _NO_DETECTION_TEXT, _NO_DETECTION_COLOR
