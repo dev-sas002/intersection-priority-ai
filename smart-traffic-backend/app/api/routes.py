@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 
+import anyio.to_thread
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 
 from app import __version__
@@ -134,9 +135,14 @@ async def predict_video(
         )
         priority = _decision_response(decision)
 
+    # Downscaling and JPEG-encoding a 4K frame costs ~11 ms of CPU, during
+    # which every other request on the event loop would otherwise wait.
+    frame = await anyio.to_thread.run_sync(
+        _encoded_frame, result.frame_to_return, settings
+    )
     return PredictionResponse(
         ambulance=result.ambulance,
-        frame=_encoded_frame(result.frame_to_return, settings),
+        frame=frame,
         confidence=result.confidence,
         label=result.label,
         frames_read=result.frames_read,
