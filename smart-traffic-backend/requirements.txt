@@ -1,0 +1,9 @@
+# Runtime dependencies for the HTTP service and the video pipeline.
+# The YOLO stack lives in requirements-ml.txt so the API, the scanner and the
+# priority layer can be installed and tested without torch.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+opencv-python-headless==4.10.0.84
+python-multipart==0.0.20
+numpy==2.1.3
+pydantic==2.10.4
