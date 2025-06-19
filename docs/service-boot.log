@@ -1,0 +1,35 @@
+INFO:     Started server process [35434]
+INFO:     Waiting for application startup.
+2026-09-23 18:57:15,872 WARNING  app.detection.registry: ITCS_DETECTOR=auto -> 'coco': no ambulance weights at /srv/itcs/weights/best.pt, falling back to the public yolov8n.pt checkpoint. It detects generic COCO vehicle classes and CANNOT identify an ambulance.
+2026-09-23 18:57:15,872 INFO     app.detection.weights: Downloading public checkpoint https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt -> /srv/itcs/weights/yolov8n.pt
+2026-09-23 18:57:20,563 INFO     app.detection.weights: Downloaded /srv/itcs/weights/yolov8n.pt (6549796 bytes).
+2026-09-23 18:57:21,342 INFO     app.detection.yolo: Loading YOLO weights from /srv/itcs/weights/yolov8n.pt ...
+2026-09-23 18:57:21,359 INFO     app.detection.yolo: Detector 'coco' ready (device=auto, classes={0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'}).
+2026-09-23 18:57:21,359 INFO     app.main: ITCS 1.0.0 ready: detector=coco real=True ambulance_class=False env=production
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8250 (Press CTRL+C to quit)
+INFO:     127.0.0.1:55834 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55835 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55836 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55838 - "POST /predict HTTP/1.1" 200 OK
+OpenCV: Couldn't read video stream from file "/var/folders/lg/__pgj2vs0x920_gybwb2tgc40000gp/T/tmp7iv9pljz.md"
+INFO:     127.0.0.1:55839 - "POST /predict HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:55840 - "GET /priority/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55841 - "POST /priority/sightings HTTP/1.1" 200 OK
+2026-09-23 18:57:25,030 INFO     app.priority.controller: Priority GRANTED to approach north (corroborated_emergency_vehicle).
+INFO:     127.0.0.1:55842 - "POST /priority/sightings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55843 - "POST /priority/sightings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55844 - "POST /priority/sightings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55845 - "POST /priority/sightings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55846 - "GET /priority/state HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55847 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55848 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55852 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55849 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55850 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55851 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55853 - "POST /predict HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [35434]
